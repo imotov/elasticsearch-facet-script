@@ -1,0 +1,25 @@
+counts = null;
+for (f : facets) {
+    if (counts != null) {
+        for (i = 0; i < f.size(); i++) {
+            counts[i] = counts[i] + f[i];
+        }
+    } else {
+        counts = f;
+    }
+};
+total = 0;
+freqs = [];
+for (v : counts) {
+    total += v;
+}
+if (total > 0) {
+    for (v : counts) {
+        freqs += v / total;
+    }
+}
+{
+    "counts" : counts,
+    "total" : total,
+    "freqs" : freqs
+}

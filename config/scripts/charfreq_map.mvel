@@ -1,0 +1,7 @@
+value = _fields[field].value;
+for(c : value.toLowerCase().toCharArray()) {
+    if ( (c >= 'a') && (c <= 'z')) {
+        pos = ((int) c ) - 97;
+        facet[pos] = facet[pos] + 1;
+    }
+};
