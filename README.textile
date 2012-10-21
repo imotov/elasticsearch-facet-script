@@ -2,14 +2,64 @@ h1. Script Facet Plugin for ElasticSearch
 
 h2. Introduction
 
-The script facet plugin provides fully scriptable facets for elasticsearch.
+p. The script facet plugin provides fully scriptable facets for elasticsearch.
 
 h2. Compatibility
 
-The following table shows the versions of elasticsearch and jetty that Jetty Plugin was built with. 
-
 |_. Script Facet Plugin   |_.  Elasticsearch    |
-| master        |  0.19.9 -> master   |
-| 1.0.0-SNAPSHOT      |  0.19.9 -> master   |
+| master        |  0.19.10 -> master   |
+| 1.0.0         |  0.19.10 -> master   |
 
+h2. Usage
 
+p. In order to install the plugin, simply run: @bin/plugin -install imotov/elasticsearch-facet-script/1.0.0@
+
+p. The script facet plugin can be used for quick custom facet prototyping. The script facet is using three script to initialize, collect and aggregate the facets. A typical script facet request looks like this:
+
+<pre>
+"facets": {
+    "facet1": {
+        "script": {
+            "init_script" : "my_init",
+            "map_script": "my_map",
+            "combine_script": "my_combine",
+            "reduce_script" : "my_reduce",
+            "params" : {
+                "facet" : [],
+                "param1" : "value 1"
+            }
+        }
+    }
+}
+</pre>
+
+p. A script facet execution can be represented using the following pseudocode:
+
+<pre>
+facets = [];
+foreach(shard in shards) {
+    init_script(); // Executed once per shard
+    foreach(record in search_results(shard)) {
+        // Init _field and doc lookup from the record
+        map_script(); // Executed once per record
+    }
+    facets.add(combine_script()); // Executed once per shard after all records are processed
+}
+reduce_script(facets); // Executed once per facet request
+</pre>
+
+p. The @init_script@, @map_script@ and @combine_script@ scripts are executed on the nodes where shards are allocated. The @reduce_script@ is executed on the node that received the client's request.
+
+p. The @init_script@, @map_script@ and @combine_script@ scripts can access parameters specified in the @params@ field of the request. These scripts can also use node client using @_client@ variable and search context using @_ctx@ variable. The @map_script@ can  access the current record using standard "document, field and source lookup mechanism":http://www.elasticsearch.org/guide/reference/modules/scripting.html.
+
+p. The return values of the @combine_script@ are accumulated into an array list that is later passed to the @reduce_script@ script as a @facets@ parameter. The return value of the @reduce_script@ are returned to the users as a result of the facet query. It's important to note that return values of the @combine_script@ and @reduce_script@ scripts have to be JSON serializable.
+
+p. The only mandatory parameter of the script facet is @map_script@. By default, the @init_script@ doesn't do anything. the @combine_script@ returns the variable named @facet@ and @reduce_script@ simply returns the array of the facets that it received from the shards.
+
+h2. Examples
+
+p. The following request calculates letter frequencies for the letters 'A'-'Z' in the field @message@.
+* "examples/charfreq.sh":https://github.com/imotov/elasticsearch-facet-script/blob/master/examples/charfreq.sh
+* "config/scripts/charfreq_init.mvel":https://github.com/imotov/elasticsearch-facet-script/blob/master/config/scripts/charfreq_init.mvel
+* "config/scripts/charfreq_map.mvel":https://github.com/imotov/elasticsearch-facet-script/blob/master/config/scripts/charfreq_map.mvel
+* "config/scripts/charfreq_reduce.mvel":https://github.com/imotov/elasticsearch-facet-script/blob/master/config/scripts/charfreq_reduce.mvel

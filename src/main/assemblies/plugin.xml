@@ -15,14 +15,5 @@
                 <exclude>log4j:log4j</exclude>
             </excludes>
         </dependencySet>
-        <dependencySet>
-            <outputDirectory>/</outputDirectory>
-            <useProjectArtifact>true</useProjectArtifact>
-            <useTransitiveFiltering>true</useTransitiveFiltering>
-            <includes>
-                <include>org.apache.lucene.morphology:russian</include>
-                <include>org.apache.lucene.morphology:english</include>
-            </includes>
-        </dependencySet>
     </dependencySets>
 </assembly>
