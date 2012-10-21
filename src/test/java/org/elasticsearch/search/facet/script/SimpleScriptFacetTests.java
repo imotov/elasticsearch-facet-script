@@ -124,7 +124,7 @@ public class SimpleScriptFacetTests extends AbstractNodesTests {
                             .endObject())
                     .execute().actionGet();
 
-            logger.info(searchResponse.toString());
+            logger.trace(searchResponse.toString());
             assertThat(searchResponse.hits().totalHits(), equalTo(15l));
             assertThat(searchResponse.hits().hits().length, equalTo(0));
             ScriptFacet facet = searchResponse.facets().facet("facet1");
@@ -217,7 +217,7 @@ public class SimpleScriptFacetTests extends AbstractNodesTests {
                         .endObject())
                 .execute().actionGet();
 
-        logger.info(searchResponse.toString());
+        logger.trace(searchResponse.toString());
         assertThat(searchResponse.hits().totalHits(), equalTo(25l));
         assertThat(searchResponse.hits().hits().length, equalTo(0));
 
