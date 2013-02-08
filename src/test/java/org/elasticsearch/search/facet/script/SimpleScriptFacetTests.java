@@ -12,12 +12,13 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
+import java.util.ArrayList;
 import java.util.Map;
 
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.typeCompatibleWith;
 
 /**
  *
@@ -57,6 +58,7 @@ public class SimpleScriptFacetTests extends AbstractNodesTests {
         return client("node0");
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void testBinaryFacet() throws Exception {
         try {
@@ -225,16 +227,82 @@ public class SimpleScriptFacetTests extends AbstractNodesTests {
 
         searchResponse = client.prepareSearch()
                 .setIndices("test1", "test2")
-                .setQuery(QueryBuilders.textQuery("complementary","orange"))
+                .setQuery(QueryBuilders.textQuery("complementary", "orange"))
                 .execute().actionGet();
 
         assertThat(searchResponse.hits().totalHits(), equalTo(5L));
 
         searchResponse = client.prepareSearch()
                 .setIndices("test2")
-                .setQuery(QueryBuilders.textQuery("complementary","violet"))
+                .setQuery(QueryBuilders.textQuery("complementary", "violet"))
                 .execute().actionGet();
 
         assertThat(searchResponse.hits().totalHits(), equalTo(10L));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testCharFrequencies() throws Exception {
+        try {
+            client.admin().indices().prepareDelete("test1").execute().actionGet();
+        } catch (Exception e) {
+            // ignore
+        }
+        client.admin().indices().prepareCreate("test1").execute().actionGet();
+        client.admin().indices().preparePutMapping("test1")
+                .setType("type1")
+                .setSource("{ \"type1\" : { \"properties\" : { \"message\" : { \"type\" : \"string\", \"store\" : \"yes\" } } } }")
+                .execute().actionGet();
+
+        client.admin().cluster().prepareHealth().setWaitForGreenStatus().execute().actionGet();
+
+        client.prepareIndex("test1", "type1").setSource(jsonBuilder().startObject()
+                .field("message", "ABCD ABCDEF")
+                .endObject()).execute().actionGet();
+
+        client.prepareIndex("test1", "type1").setSource(jsonBuilder().startObject()
+                .field("message", "EFGHIJ")
+                .endObject()).execute().actionGet();
+
+        client.prepareIndex("test1", "type1").setSource(jsonBuilder().startObject()
+                .field("message", "IJKLMNOP")
+                .endObject()).execute().actionGet();
+
+        client.admin().indices().prepareFlush().setRefresh(true).execute().actionGet();
+
+        client.admin().indices().prepareRefresh().execute().actionGet();
+
+        SearchResponse searchResponse = client.prepareSearch()
+                .setSearchType(SearchType.COUNT)
+                .setIndices("test1")
+                .setExtraSource(XContentFactory.jsonBuilder().startObject()
+                        .startObject("facets")
+                        .startObject("facet1")
+                        .startObject("script")
+                        .field("init_script", "charfreq_init")
+                        .field("map_script", "charfreq_map")
+                        .field("reduce_script", "charfreq_reduce")
+                        .startObject("params")
+                        .startArray("facet")
+                        .endArray()
+                        .field("field", "message")
+                        .endObject()
+                        .endObject()
+                        .endObject()
+                        .endObject()
+                        .endObject())
+                .execute().actionGet();
+
+        logger.trace(searchResponse.toString());
+        assertThat(searchResponse.hits().totalHits(), equalTo(3l));
+        assertThat(searchResponse.hits().hits().length, equalTo(0));
+
+        ScriptFacet facet = searchResponse.facets().facet("facet1");
+        assertThat(facet.name(), equalTo("facet1"));
+        Map<String, Object> facetResult = (Map<String, Object>) facet.facet();
+        assertThat(facetResult.get("total"), equalTo((Object) 24));
+        assertThat((ArrayList<Integer>) facetResult.get("counts"),
+                //       A  B  C  D  E  F  G  H  I  J  K  L  M  N  O  P  Q  R  S  T  U  V  W  X  Y  Z
+                contains(2, 2, 2, 2, 2, 2, 1, 1, 2, 2, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
     }
 }

@@ -14,7 +14,6 @@ import org.elasticsearch.search.facet.FacetProcessor;
 import org.elasticsearch.search.internal.SearchContext;
 
 import java.io.IOException;
-import java.io.StringReader;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -40,8 +39,8 @@ public class ScriptFacetProcessor extends AbstractComponent implements FacetProc
 
     @Override
     public String[] types() {
-        return new String[] {
-            ScriptFacet.TYPE
+        return new String[]{
+                ScriptFacet.TYPE
         };
     }
 
@@ -84,17 +83,15 @@ public class ScriptFacetProcessor extends AbstractComponent implements FacetProc
 
         return new ScriptFacetCollector(facetName, scriptLang, initScript, mapScript, combineScript, reduceScript, params, context, client);
     }
+
     @Override
     public Facet reduce(String s, List<Facet> facets) {
-        if (facets.size() == 1) {
-            return facets.get(0);
-        }
         List<Object> facetObjects = newArrayList();
-        for(Facet facet : facets ) {
-            InternalScriptFacet mapReduceFacet = (InternalScriptFacet)facet;
+        for (Facet facet : facets) {
+            InternalScriptFacet mapReduceFacet = (InternalScriptFacet) facet;
             facetObjects.add(mapReduceFacet.facet());
         }
-        InternalScriptFacet firstFacet = ((InternalScriptFacet)facets.get(0));
+        InternalScriptFacet firstFacet = ((InternalScriptFacet) facets.get(0));
         Object facet;
         if (firstFacet.reduceScript() != null) {
             ExecutableScript script = scriptService.executable(firstFacet.scriptLang(), firstFacet.reduceScript(), new HashMap());
