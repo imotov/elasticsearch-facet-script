@@ -227,14 +227,14 @@ public class SimpleScriptFacetTests extends AbstractNodesTests {
 
         searchResponse = client.prepareSearch()
                 .setIndices("test1", "test2")
-                .setQuery(QueryBuilders.textQuery("complementary", "orange"))
+                .setQuery(QueryBuilders.matchQuery("complementary", "orange"))
                 .execute().actionGet();
 
         assertThat(searchResponse.hits().totalHits(), equalTo(5L));
 
         searchResponse = client.prepareSearch()
                 .setIndices("test2")
-                .setQuery(QueryBuilders.textQuery("complementary", "violet"))
+                .setQuery(QueryBuilders.matchQuery("complementary", "violet"))
                 .execute().actionGet();
 
         assertThat(searchResponse.hits().totalHits(), equalTo(10L));
