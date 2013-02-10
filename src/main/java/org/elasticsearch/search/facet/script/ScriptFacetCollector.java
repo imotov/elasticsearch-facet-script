@@ -1,9 +1,10 @@
 package org.elasticsearch.search.facet.script;
 
-import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.index.AtomicReaderContext;
 import org.apache.lucene.search.Scorer;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.script.ExecutableScript;
+import org.elasticsearch.script.ScriptService;
 import org.elasticsearch.script.SearchScript;
 import org.elasticsearch.search.facet.AbstractFacetCollector;
 import org.elasticsearch.search.facet.Facet;
@@ -29,9 +30,15 @@ public class ScriptFacetCollector extends AbstractFacetCollector {
 
     private final Map<String, Object> params;
 
+    private ScriptService scriptService;
+
+    private Client client;
+
     public ScriptFacetCollector(String facetName, String scriptLang, String initScript, String mapScript, String combineScript,
                                 String reduceScript, Map<String, Object> params, SearchContext context, Client client) {
         super(facetName);
+        this.scriptService = context.scriptService();
+        this.client = client;
         this.scriptLang = scriptLang;
         if (params == null) {
             this.params = newHashMap();
@@ -41,11 +48,11 @@ public class ScriptFacetCollector extends AbstractFacetCollector {
         this.params.put("_ctx", context);
         this.params.put("_client", client);
         if (initScript != null) {
-            context.scriptService().executable(scriptLang, initScript, this.params).run();
+            scriptService.executable(scriptLang, initScript, this.params).run();
         }
-        this.mapScript = context.scriptService().search(context.lookup(), scriptLang, mapScript, this.params);
+        this.mapScript = scriptService.search(context.lookup(), scriptLang, mapScript, this.params);
         if (combineScript != null) {
-            this.combineScript = context.scriptService().executable(scriptLang, combineScript, this.params);
+            this.combineScript = scriptService.executable(scriptLang, combineScript, this.params);
         } else {
             this.combineScript = null;
         }
@@ -58,8 +65,8 @@ public class ScriptFacetCollector extends AbstractFacetCollector {
     }
 
     @Override
-    protected void doSetNextReader(IndexReader reader, int docBase) throws IOException {
-        mapScript.setNextReader(reader);
+    protected void doSetNextReader(AtomicReaderContext context) throws IOException {
+        mapScript.setNextReader(context);
     }
 
     @Override
@@ -76,6 +83,6 @@ public class ScriptFacetCollector extends AbstractFacetCollector {
         } else {
             facet = params.get("facet");
         }
-        return new InternalScriptFacet(facetName, facet, scriptLang, reduceScript);
+        return new InternalScriptFacet(facetName, facet, scriptLang, reduceScript, scriptService, client);
     }
 }
