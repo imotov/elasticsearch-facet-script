@@ -18,7 +18,7 @@ package org.elasticsearch.plugin.search.facet.script;
 
 import org.elasticsearch.plugins.AbstractPlugin;
 import org.elasticsearch.search.facet.FacetModule;
-import org.elasticsearch.search.facet.script.ScriptFacetProcessor;
+import org.elasticsearch.search.facet.script.ScriptFacetParser;
 
 /**
  *
@@ -36,7 +36,7 @@ public class ScriptFacetPlugin extends AbstractPlugin {
     }
 
     public void onModule(FacetModule facetModule) {
-        facetModule.addFacetProcessor(ScriptFacetProcessor.class);
+        facetModule.addFacetProcessor(ScriptFacetParser.class);
     }
 
 }

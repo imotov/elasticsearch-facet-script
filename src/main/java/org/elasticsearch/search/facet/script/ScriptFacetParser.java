@@ -5,35 +5,26 @@ import org.elasticsearch.common.component.AbstractComponent;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentParser;
-import org.elasticsearch.script.ExecutableScript;
 import org.elasticsearch.script.ScriptService;
-import org.elasticsearch.search.facet.Facet;
-import org.elasticsearch.search.facet.FacetCollector;
+import org.elasticsearch.search.facet.FacetExecutor;
+import org.elasticsearch.search.facet.FacetParser;
 import org.elasticsearch.search.facet.FacetPhaseExecutionException;
-import org.elasticsearch.search.facet.FacetProcessor;
 import org.elasticsearch.search.internal.SearchContext;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-
-import static org.elasticsearch.common.collect.Lists.newArrayList;
 
 /**
  *
  */
-public class ScriptFacetProcessor extends AbstractComponent implements FacetProcessor {
-
-    private final ScriptService scriptService;
+public class ScriptFacetParser extends AbstractComponent implements FacetParser {
 
     private final Client client;
 
     @Inject
-    public ScriptFacetProcessor(Settings settings, ScriptService scriptService, Client client) {
+    public ScriptFacetParser(Settings settings, ScriptService scriptService, Client client) {
         super(settings);
-        InternalScriptFacet.registerStreams();
-        this.scriptService = scriptService;
+        InternalScriptFacet.registerStreams(scriptService, client);
         this.client = client;
     }
 
@@ -45,7 +36,17 @@ public class ScriptFacetProcessor extends AbstractComponent implements FacetProc
     }
 
     @Override
-    public FacetCollector parse(String facetName, XContentParser parser, SearchContext context) throws IOException {
+    public FacetExecutor.Mode defaultMainMode() {
+        return FacetExecutor.Mode.COLLECTOR;
+    }
+
+    @Override
+    public FacetExecutor.Mode defaultGlobalMode() {
+        return FacetExecutor.Mode.COLLECTOR;
+    }
+
+    @Override
+    public FacetExecutor parse(String facetName, XContentParser parser, SearchContext context) throws IOException {
         String initScript = null;
         String mapScript = null;
         String combineScript = null;
@@ -81,26 +82,7 @@ public class ScriptFacetProcessor extends AbstractComponent implements FacetProc
             throw new FacetPhaseExecutionException(facetName, "map_script field is required");
         }
 
-        return new ScriptFacetCollector(facetName, scriptLang, initScript, mapScript, combineScript, reduceScript, params, context, client);
+        return new ScriptFacetCollector(scriptLang, initScript, mapScript, combineScript, reduceScript, params, context, client);
     }
 
-    @Override
-    public Facet reduce(String s, List<Facet> facets) {
-        List<Object> facetObjects = newArrayList();
-        for (Facet facet : facets) {
-            InternalScriptFacet mapReduceFacet = (InternalScriptFacet) facet;
-            facetObjects.add(mapReduceFacet.facet());
-        }
-        InternalScriptFacet firstFacet = ((InternalScriptFacet) facets.get(0));
-        Object facet;
-        if (firstFacet.reduceScript() != null) {
-            ExecutableScript script = scriptService.executable(firstFacet.scriptLang(), firstFacet.reduceScript(), new HashMap());
-            script.setNextVar("facets", facetObjects);
-            script.setNextVar("_client", client);
-            facet = script.run();
-        } else {
-            facet = facetObjects;
-        }
-        return new InternalScriptFacet(firstFacet.name(), facet, firstFacet.scriptLang(), firstFacet.reduceScript());
-    }
 }

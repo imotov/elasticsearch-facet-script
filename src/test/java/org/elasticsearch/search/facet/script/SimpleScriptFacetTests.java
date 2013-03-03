@@ -127,10 +127,10 @@ public class SimpleScriptFacetTests extends AbstractNodesTests {
                     .execute().actionGet();
 
             logger.trace(searchResponse.toString());
-            assertThat(searchResponse.hits().totalHits(), equalTo(15l));
-            assertThat(searchResponse.hits().hits().length, equalTo(0));
-            ScriptFacet facet = searchResponse.facets().facet("facet1");
-            assertThat(facet.name(), equalTo("facet1"));
+            assertThat(searchResponse.getHits().getTotalHits(), equalTo(15l));
+            assertThat(searchResponse.getHits().getHits().length, equalTo(0));
+            ScriptFacet facet = searchResponse.getFacets().facet("facet1");
+            assertThat(facet.getName(), equalTo("facet1"));
             Map<String, Object> facetResult = (Map<String, Object>) facet.facet();
             assertThat(facetResult.size(), equalTo(2));
             assertThat(facetResult.get("green"), equalTo((Object) 10));
@@ -220,8 +220,8 @@ public class SimpleScriptFacetTests extends AbstractNodesTests {
                 .execute().actionGet();
 
         logger.trace(searchResponse.toString());
-        assertThat(searchResponse.hits().totalHits(), equalTo(25l));
-        assertThat(searchResponse.hits().hits().length, equalTo(0));
+        assertThat(searchResponse.getHits().totalHits(), equalTo(25l));
+        assertThat(searchResponse.getHits().getHits().length, equalTo(0));
 
         client.admin().indices().prepareRefresh().execute().actionGet();
 
@@ -230,14 +230,14 @@ public class SimpleScriptFacetTests extends AbstractNodesTests {
                 .setQuery(QueryBuilders.matchQuery("complementary", "orange"))
                 .execute().actionGet();
 
-        assertThat(searchResponse.hits().totalHits(), equalTo(5L));
+        assertThat(searchResponse.getHits().totalHits(), equalTo(5L));
 
         searchResponse = client.prepareSearch()
                 .setIndices("test2")
                 .setQuery(QueryBuilders.matchQuery("complementary", "violet"))
                 .execute().actionGet();
 
-        assertThat(searchResponse.hits().totalHits(), equalTo(10L));
+        assertThat(searchResponse.getHits().totalHits(), equalTo(10L));
     }
 
     @SuppressWarnings("unchecked")
@@ -294,11 +294,11 @@ public class SimpleScriptFacetTests extends AbstractNodesTests {
                 .execute().actionGet();
 
         logger.trace(searchResponse.toString());
-        assertThat(searchResponse.hits().totalHits(), equalTo(3l));
-        assertThat(searchResponse.hits().hits().length, equalTo(0));
+        assertThat(searchResponse.getHits().getTotalHits(), equalTo(3l));
+        assertThat(searchResponse.getHits().getHits().length, equalTo(0));
 
-        ScriptFacet facet = searchResponse.facets().facet("facet1");
-        assertThat(facet.name(), equalTo("facet1"));
+        ScriptFacet facet = searchResponse.getFacets().facet("facet1");
+        assertThat(facet.getName(), equalTo("facet1"));
         Map<String, Object> facetResult = (Map<String, Object>) facet.facet();
         assertThat(facetResult.get("total"), equalTo((Object) 24));
         assertThat((ArrayList<Integer>) facetResult.get("counts"),
