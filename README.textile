@@ -7,12 +7,23 @@ p. The script facet plugin provides fully scriptable facets for elasticsearch.
 h2. Compatibility
 
 |_. Script Facet Plugin   |_.  Elasticsearch    |
+| 1.1.0         |  0.90.0.Beta1 -> master   |
 | 1.0.1         |  0.19.10 -> 0.20.99   |
 | 1.0.0         |  0.19.10 -> 0.20.99   |
 
 h2. Usage
 
-p. In order to install the plugin, simply run: @bin/plugin -install imotov/elasticsearch-facet-script/1.0.0@
+p. In order to install the plugin, simply run the following command in the elasticsearch home directory: 
+
+<pre>
+bin/plugin -url http://dl.bintray.com/content/imotov/elasticsearch-plugins/elasticsearch-facet-script-VERSION.zip -install facet-script
+</pre>
+
+p. where @VERSION@ is the version of the plugin from the compatibility table. For examples to install version @1.1.0@ run 
+
+<pre>
+bin/plugin -url http://dl.bintray.com/content/imotov/elasticsearch-plugins/elasticsearch-facet-script-1.1.0.zip -install facet-script
+</pre>
 
 p. The script facet plugin can be used for quick custom facet prototyping. The script facet is using three script to initialize, collect and aggregate the facets. A typical script facet request looks like this:
 
