@@ -305,4 +305,55 @@ public class SimpleScriptFacetTests extends AbstractNodesTests {
                 //       A  B  C  D  E  F  G  H  I  J  K  L  M  N  O  P  Q  R  S  T  U  V  W  X  Y  Z
                 contains(2, 2, 2, 2, 2, 2, 1, 1, 2, 2, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
     }
+
+    @Test
+    public void testClientAccessFromScript() throws Exception {
+        try {
+            client.admin().indices().prepareDelete("test1").execute().actionGet();
+        } catch (Exception e) {
+            // ignore
+        }
+        client.admin().indices().prepareCreate("test1").execute().actionGet();
+        client.admin().indices().preparePutMapping("test1")
+                .setType("type1")
+                .setSource("{ \"type1\" : { \"properties\" : { \"message\" : { \"type\" : \"string\", \"store\" : \"yes\" } } } }")
+                .execute().actionGet();
+
+        client.admin().cluster().prepareHealth().setWaitForGreenStatus().execute().actionGet();
+
+        client.prepareIndex("test1", "type1").setSource(jsonBuilder().startObject()
+                .field("message", "foo bar")
+                .endObject()).execute().actionGet();
+
+        client.admin().indices().prepareFlush().setRefresh(true).execute().actionGet();
+
+        client.admin().indices().prepareRefresh().execute().actionGet();
+
+        SearchResponse searchResponse = client.prepareSearch()
+                .setSearchType(SearchType.COUNT)
+                .setIndices("test1")
+                .setExtraSource(XContentFactory.jsonBuilder().startObject()
+                        .startObject("facets")
+                        .startObject("facet1")
+                        .startObject("script")
+                        .field("map_script", "_client.prepareUpdate(\"test1\", \"type1\", org.elasticsearch.index.mapper.Uid.idFromUid(doc['_uid'].value)).setDoc(\"{\\\"message\\\": \\\"baz\\\"}\").execute().actionGet()")
+                        .endObject()
+                        .endObject()
+                        .endObject()
+                        .endObject())
+                .execute().actionGet();
+        logger.trace(searchResponse.toString());
+        assertThat(searchResponse.getHits().getTotalHits(), equalTo(1l));
+        assertThat(searchResponse.getHits().getHits().length, equalTo(0));
+        ScriptFacet facet = searchResponse.getFacets().facet("facet1");
+        assertThat(facet.getName(), equalTo("facet1"));
+
+        client.admin().indices().prepareRefresh("test1").execute().actionGet();
+        SearchResponse response = client.prepareSearch("test1").setTypes("type1").setQuery(QueryBuilders.matchAllQuery())
+                .addField("message").execute().actionGet();
+        assertThat(response.getHits().getTotalHits(), equalTo(1L));
+        assertThat(response.getHits().getHits()[0].field("message").getValue().toString(), equalTo("baz"));
+
+
+    }
 }
