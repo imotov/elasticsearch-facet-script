@@ -1,5 +1,7 @@
 package org.elasticsearch.search.facet.script;
 
+import static org.elasticsearch.common.collect.Maps.newHashMap;
+
 import org.apache.lucene.index.AtomicReaderContext;
 import org.apache.lucene.search.Scorer;
 import org.elasticsearch.client.Client;
@@ -12,8 +14,6 @@ import org.elasticsearch.search.internal.SearchContext;
 
 import java.io.IOException;
 import java.util.Map;
-
-import static org.elasticsearch.common.collect.Maps.newHashMap;
 
 /**
  *
@@ -29,6 +29,8 @@ public class ScriptFacetCollector extends FacetExecutor {
     private final String reduceScript;
 
     private final Map<String, Object> params;
+    // different object because 'params' is modifiable by same shard scripts.
+    private final Map<String, Object> reduceParams;
 
     private ScriptService scriptService;
 
@@ -41,8 +43,10 @@ public class ScriptFacetCollector extends FacetExecutor {
         this.scriptLang = scriptLang;
         if (params == null) {
             this.params = newHashMap();
+            this.reduceParams = newHashMap();
         } else {
             this.params = params;
+            this.reduceParams = newHashMap(params);
         }
         this.params.put("_ctx", context);
         this.params.put("_client", client);
@@ -66,7 +70,7 @@ public class ScriptFacetCollector extends FacetExecutor {
         } else {
             facet = params.get("facet");
         }
-        return new InternalScriptFacet(facetName, facet, scriptLang, reduceScript, scriptService, client);
+        return new InternalScriptFacet(facetName, facet, scriptLang, reduceScript, reduceParams, scriptService, client);
     }
 
     @Override
