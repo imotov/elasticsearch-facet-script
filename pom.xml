@@ -18,10 +18,10 @@
         </license>
     </licenses>
     <scm>
-        <connection>scm:git:git@github.com:imotov/elasticsearch-facet-script.git</connection>
-        <developerConnection>scm:git:git@github.com:imotov/elasticsearch-facet-script.git
+        <connection>scm:git:git@github.com:swoop-inc/elasticsearch-facet-script.git</connection>
+        <developerConnection>scm:git:git@github.com:swoop-inc/elasticsearch-facet-script.git
         </developerConnection>
-        <url>http://github.com/imotov/elasticsearch-facet-script</url>
+        <url>https://github.com/swoop-inc/elasticsearch-facet-script</url>
     </scm>
 
     <parent>
@@ -31,7 +31,7 @@
     </parent>
 
     <properties>
-        <elasticsearch.version>0.90.0.Beta1</elasticsearch.version>
+        <elasticsearch.version>0.90.0.RC2</elasticsearch.version>
     </properties>
 
     <repositories>
