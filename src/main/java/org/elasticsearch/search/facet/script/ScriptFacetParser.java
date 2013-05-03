@@ -53,6 +53,7 @@ public class ScriptFacetParser extends AbstractComponent implements FacetParser 
         String reduceScript = null;
         String scriptLang = null;
         Map<String, Object> params = null;
+        Map<String, Object> reduceParams = null;
         XContentParser.Token token;
         String fieldName = null;
 
@@ -62,6 +63,8 @@ public class ScriptFacetParser extends AbstractComponent implements FacetParser 
             } else if (token == XContentParser.Token.START_OBJECT) {
                 if ("params".equals(fieldName)) {
                     params = parser.map();
+                } else if ("reduce_params".equals(fieldName)) {
+                  reduceParams = parser.map();
                 }
             } else if (token.isValue()) {
                 if ("init_script".equals(fieldName) || "initScript".equals(fieldName)) {
@@ -82,7 +85,7 @@ public class ScriptFacetParser extends AbstractComponent implements FacetParser 
             throw new FacetPhaseExecutionException(facetName, "map_script field is required");
         }
 
-        return new ScriptFacetCollector(scriptLang, initScript, mapScript, combineScript, reduceScript, params, context, client);
+        return new ScriptFacetCollector(scriptLang, initScript, mapScript, combineScript, reduceScript, params, reduceParams, context, client);
     }
 
 }

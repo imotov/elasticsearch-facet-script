@@ -39,6 +39,9 @@ p. The script facet plugin can be used for quick custom facet prototyping. The s
                 "facet" : [],
                 "param1" : "value 1"
             }
+            "reduce_params" : {
+                "reduce_param1" : "value 1"
+            }
         }
     }
 }
@@ -64,6 +67,8 @@ p. The @init_script@, @map_script@ and @combine_script@ scripts are executed on 
 p. The @init_script@, @map_script@ and @combine_script@ scripts can access parameters specified in the @params@ field of the request. These scripts can also use node client using @_client@ variable and search context using @_ctx@ variable. The @map_script@ can access the current record using standard "document, field and source lookup mechanism":http://www.elasticsearch.org/guide/reference/modules/scripting.html.
 
 p. The content of the @params@ field is initialized with values specified in the facet requests at the beginning of a shard processing and then preserved between all script calls within the shard. The @init_script@ can be used to do additional initialization of the @params@ map, @map_script@ can use the @params@ map to accumulate results of processing and @combine_script@ can retrieve accumulated results from the @params@ map and combine them into intermediate facet for the processed shard. The return values of @combine_script@ calls for all shards are sent to the node where @reduce_script@ is running and accumulated into an array list that is passed to the @reduce_script@ script as a @facets@ parameter. The return value of the @reduce_script@ are returned to the users as a result of the facet query. It's important to note that return values of the @combine_script@ and @reduce_script@ scripts have to be JSON serializable, which means they can contain only primitive data types, @java.util.Date@, @byte[]@, @Object[]@, @java.util.List@, and @java.util.Map@.
+
+p. @reduce_script@ can be initialized by the @reduce_params@ object. 
 
 p. The only mandatory parameter of the script facet is @map_script@. By default, the @init_script@ doesn't do anything, the @combine_script@ returns the variable named @facet@ and @reduce_script@ simply returns the array of the facets that it received from the shards.
 

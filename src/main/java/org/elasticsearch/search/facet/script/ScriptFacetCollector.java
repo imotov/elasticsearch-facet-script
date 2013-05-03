@@ -28,8 +28,10 @@ public class ScriptFacetCollector extends FacetExecutor {
 
     private final String reduceScript;
 
+    // initial parameters for same shard scripts {init, map, combine}
+    // state can be passed in params between them too
     private final Map<String, Object> params;
-    // different object because 'params' is modifiable by same shard scripts.
+    // initial parameters for {reduce}
     private final Map<String, Object> reduceParams;
 
     private ScriptService scriptService;
@@ -37,16 +39,20 @@ public class ScriptFacetCollector extends FacetExecutor {
     private Client client;
 
     public ScriptFacetCollector(String scriptLang, String initScript, String mapScript, String combineScript,
-                                String reduceScript, Map<String, Object> params, SearchContext context, Client client) {
+                                String reduceScript, Map<String, Object> params, Map<String, Object> reduceParams,
+                                SearchContext context, Client client) {
         this.scriptService = context.scriptService();
         this.client = client;
         this.scriptLang = scriptLang;
         if (params == null) {
             this.params = newHashMap();
-            this.reduceParams = newHashMap();
         } else {
             this.params = params;
-            this.reduceParams = newHashMap(params);
+        }
+        if (reduceParams == null) {
+          this.reduceParams = newHashMap();
+        } else {
+          this.reduceParams = reduceParams;
         }
         this.params.put("_ctx", context);
         this.params.put("_client", client);
