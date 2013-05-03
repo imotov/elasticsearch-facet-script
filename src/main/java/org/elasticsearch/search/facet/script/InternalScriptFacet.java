@@ -16,6 +16,8 @@
 
 package org.elasticsearch.search.facet.script;
 
+import static org.elasticsearch.common.collect.Lists.newArrayList;
+
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.bytes.HashedBytesArray;
@@ -29,10 +31,8 @@ import org.elasticsearch.search.facet.Facet;
 import org.elasticsearch.search.facet.InternalFacet;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.List;
-
-import static org.elasticsearch.common.collect.Lists.newArrayList;
+import java.util.Map;
 
 /**
  *
@@ -43,6 +43,7 @@ public class InternalScriptFacet extends InternalFacet implements ScriptFacet {
     private Object facet;
     private String scriptLang;
     private String reduceScript;
+    private Map<String, Object> reduceParams;
     private ScriptService scriptService;
     private Client client;
 
@@ -62,10 +63,11 @@ public class InternalScriptFacet extends InternalFacet implements ScriptFacet {
         this.client = client;
     }
 
-    public InternalScriptFacet(String name, Object facet, String scriptLang, String reduceScript, ScriptService scriptService, Client client) {
+    public InternalScriptFacet(String name, Object facet, String scriptLang, String reduceScript, Map<String, Object> reduceParams, ScriptService scriptService, Client client) {
         this(name, scriptService, client);
         this.facet = facet;
         this.reduceScript = reduceScript;
+        this.reduceParams = reduceParams;
         this.scriptLang = scriptLang;
     }
 
@@ -84,14 +86,14 @@ public class InternalScriptFacet extends InternalFacet implements ScriptFacet {
         InternalScriptFacet firstFacet = ((InternalScriptFacet) facets.get(0));
         Object facet;
         if (firstFacet.reduceScript() != null) {
-            ExecutableScript script = scriptService.executable(firstFacet.scriptLang(), firstFacet.reduceScript(), new HashMap());
+            ExecutableScript script = scriptService.executable(firstFacet.scriptLang(), firstFacet.reduceScript(), firstFacet.reduceParams());
             script.setNextVar("facets", facetObjects);
             script.setNextVar("_client", client);
             facet = script.run();
         } else {
             facet = facetObjects;
         }
-        return new InternalScriptFacet(firstFacet.getName(), facet, firstFacet.scriptLang(), firstFacet.reduceScript(), scriptService, client);
+        return new InternalScriptFacet(firstFacet.getName(), facet, firstFacet.scriptLang(), firstFacet.reduceScript(), firstFacet.reduceParams(), scriptService, client);
     }
 
     @Override
@@ -104,6 +106,7 @@ public class InternalScriptFacet extends InternalFacet implements ScriptFacet {
         super.readFrom(in);
         scriptLang = in.readOptionalString();
         reduceScript = in.readOptionalString();
+        reduceParams = in.readMap();
         facet = in.readGenericValue();
     }
 
@@ -112,6 +115,7 @@ public class InternalScriptFacet extends InternalFacet implements ScriptFacet {
         super.writeTo(out);
         out.writeOptionalString(scriptLang);
         out.writeOptionalString(reduceScript);
+        out.writeMap(reduceParams);
         out.writeGenericValue(facet);
     }
 
@@ -133,6 +137,10 @@ public class InternalScriptFacet extends InternalFacet implements ScriptFacet {
         return reduceScript;
     }
 
+    public Map<String, Object> reduceParams() {
+      return reduceParams;
+    }
+    
     static final class Fields {
         static final XContentBuilderString _TYPE = new XContentBuilderString("_type");
         static final XContentBuilderString FACET = new XContentBuilderString("facet");
