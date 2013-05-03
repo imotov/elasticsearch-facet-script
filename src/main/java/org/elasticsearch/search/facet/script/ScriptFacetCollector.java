@@ -1,5 +1,7 @@
 package org.elasticsearch.search.facet.script;
 
+import static org.elasticsearch.common.collect.Maps.newHashMap;
+
 import org.apache.lucene.index.AtomicReaderContext;
 import org.apache.lucene.search.Scorer;
 import org.elasticsearch.client.Client;
@@ -12,8 +14,6 @@ import org.elasticsearch.search.internal.SearchContext;
 
 import java.io.IOException;
 import java.util.Map;
-
-import static org.elasticsearch.common.collect.Maps.newHashMap;
 
 /**
  *
@@ -28,14 +28,19 @@ public class ScriptFacetCollector extends FacetExecutor {
 
     private final String reduceScript;
 
+    // initial parameters for same shard scripts {init, map, combine}
+    // state can be passed in params between them too
     private final Map<String, Object> params;
+    // initial parameters for {reduce}
+    private final Map<String, Object> reduceParams;
 
     private ScriptService scriptService;
 
     private Client client;
 
     public ScriptFacetCollector(String scriptLang, String initScript, String mapScript, String combineScript,
-                                String reduceScript, Map<String, Object> params, SearchContext context, Client client) {
+                                String reduceScript, Map<String, Object> params, Map<String, Object> reduceParams,
+                                SearchContext context, Client client) {
         this.scriptService = context.scriptService();
         this.client = client;
         this.scriptLang = scriptLang;
@@ -43,6 +48,11 @@ public class ScriptFacetCollector extends FacetExecutor {
             this.params = newHashMap();
         } else {
             this.params = params;
+        }
+        if (reduceParams == null) {
+          this.reduceParams = newHashMap();
+        } else {
+          this.reduceParams = reduceParams;
         }
         this.params.put("_ctx", context);
         this.params.put("_client", client);
@@ -66,7 +76,7 @@ public class ScriptFacetCollector extends FacetExecutor {
         } else {
             facet = params.get("facet");
         }
-        return new InternalScriptFacet(facetName, facet, scriptLang, reduceScript, scriptService, client);
+        return new InternalScriptFacet(facetName, facet, scriptLang, reduceScript, reduceParams, scriptService, client);
     }
 
     @Override
