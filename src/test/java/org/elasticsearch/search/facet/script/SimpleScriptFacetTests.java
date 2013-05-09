@@ -369,7 +369,67 @@ public class SimpleScriptFacetTests extends AbstractNodesTests {
                 .addField("message").execute().actionGet();
         assertThat(response.getHits().getTotalHits(), equalTo(1L));
         assertThat(response.getHits().getHits()[0].field("message").getValue().toString(), equalTo("baz"));
+    }
 
+    @Test
+    public void testScriptParams() throws Exception {
+        try {
+            client.admin().indices().prepareDelete("test1").execute().actionGet();
+        } catch (Exception e) {
+            // ignore
+        }
+        client.admin().indices().prepareCreate("test1").execute().actionGet();
+        client.admin().indices().preparePutMapping("test1")
+                .setType("type1")
+                .setSource("{ \"type1\" : { \"properties\" : { \"num\" : { \"type\" : \"integer\" } } } }")
+                .execute().actionGet();
 
+        client.admin().cluster().prepareHealth().setWaitForGreenStatus().execute().actionGet();
+
+        for (int i = 1; i <= 10; i++) {
+            client.prepareIndex("test1", "type1").setSource(jsonBuilder().startObject()
+                    .field("num", i)
+                    .endObject()).execute().actionGet();
+        }
+        client.admin().indices().prepareFlush().setRefresh(true).execute().actionGet();
+
+        client.admin().indices().prepareRefresh().execute().actionGet();
+
+        SearchResponse searchResponse = client.prepareSearch()
+                .setSearchType(SearchType.COUNT)
+                .setIndices("test1")
+                .setExtraSource(XContentFactory.jsonBuilder()
+                        .startObject()
+                        .startObject("facets")
+                        .startObject("facet1")
+                        .startObject("script")
+                        .field("map_script", "facet.total += (doc.num.value + shift); facet.count = facet.count + 1;")
+                        .field("reduce_script", "total = 0L; count = 0;" +
+                                "for (f : facets) {" +
+                                "  total = total + f.total;" +
+                                "  count = count + f.count;" +
+                                "};" +
+                                "total/count + shift")
+                        .startObject("params")
+                        .startObject("facet")
+                        .field("total", 0)
+                        .field("count", 0)
+                        .endObject()
+                        .field("shift", 10)
+                        .endObject()
+                        .startObject("reduce_params")
+                        .field("shift", -10)
+                        .endObject()
+                        .endObject()
+                        .endObject()
+                        .endObject()
+                        .endObject())
+                .execute().actionGet();
+        logger.trace(searchResponse.toString());
+        assertThat(searchResponse.getHits().getTotalHits(), equalTo(10l));
+        assertThat(searchResponse.getHits().getHits().length, equalTo(0));
+        ScriptFacet facet = searchResponse.getFacets().facet("facet1");
+        assertThat(facet.getName(), equalTo("facet1"));
+        assertThat((Long) facet.facet(), equalTo(5L));
     }
 }
