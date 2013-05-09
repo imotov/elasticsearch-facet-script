@@ -45,8 +45,20 @@ public abstract class AbstractNodesTests {
 
     private Settings defaultSettings = ImmutableSettings
             .settingsBuilder()
-            .put("cluster.name", "test-cluster-" + NetworkUtils.getLocalAddress().getHostName())
+            .put("cluster.name", createClusterName())
             .build();
+
+	/**
+	 * Create a unique (or unique enough) cluster name, for testing.
+	 */
+	private static String createClusterName() {
+		try {
+			return "test-cluster-" + NetworkUtils.getLocalAddress().getHostName();
+		}
+		catch (Exception e) {
+			return "test-cluster-" + Long.toString((long)(Math.random() * 1000000000L), 16);
+		}
+	}
 
     public void putDefaultSettings(Settings.Builder settings) {
         putDefaultSettings(settings.build());
