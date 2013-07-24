@@ -17,10 +17,10 @@ h2. Usage
 p. In order to install the plugin, simply run the following command in the elasticsearch home directory: 
 
 <pre>
-bin/plugin  -install facet-script -url http://dl.bintray.com/content/imotov/elasticsearch-plugins/elasticsearch-facet-script-VERSION.zip
+bin/plugin -install facet-script -url http://dl.bintray.com/content/imotov/elasticsearch-plugins/elasticsearch-facet-script-VERSION.zip
 </pre>
 
-p. where @VERSION@ is the version of the plugin from the compatibility table. For examples to install version @1.1.0@ run 
+p. where @VERSION@ is the version of the plugin from the compatibility table. For examples to install version @1.1.1@ run 
 
 <pre>
 bin/plugin -install facet-script -url http://dl.bintray.com/content/imotov/elasticsearch-plugins/elasticsearch-facet-script-1.1.1.zip
