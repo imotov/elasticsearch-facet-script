@@ -19,6 +19,7 @@ package org.elasticsearch.search.facet.script;
 import static org.elasticsearch.common.collect.Lists.newArrayList;
 
 import org.elasticsearch.client.Client;
+import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.bytes.HashedBytesArray;
 import org.elasticsearch.common.io.stream.StreamInput;
@@ -38,7 +39,7 @@ import java.util.Map;
  *
  */
 public class InternalScriptFacet extends InternalFacet implements ScriptFacet {
-    private static final BytesReference STREAM_TYPE = new HashedBytesArray("script");
+    private static final BytesReference STREAM_TYPE = new HashedBytesArray(Strings.toUTF8Bytes("script"));
 
     private Object facet;
     private String scriptLang;
