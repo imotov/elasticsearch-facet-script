@@ -16,8 +16,6 @@
 
 package org.elasticsearch.search.facet.script;
 
-import static org.elasticsearch.common.collect.Lists.newArrayList;
-
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.bytes.BytesReference;
@@ -32,8 +30,11 @@ import org.elasticsearch.search.facet.Facet;
 import org.elasticsearch.search.facet.InternalFacet;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static org.elasticsearch.common.collect.Lists.newArrayList;
 
 /**
  *
@@ -87,9 +88,15 @@ public class InternalScriptFacet extends InternalFacet implements ScriptFacet {
         InternalScriptFacet firstFacet = ((InternalScriptFacet) facets.get(0));
         Object facet;
         if (firstFacet.reduceScript() != null) {
-            ExecutableScript script = scriptService.executable(firstFacet.scriptLang(), firstFacet.reduceScript(), firstFacet.reduceParams());
-            script.setNextVar("facets", facetObjects);
-            script.setNextVar("_client", client);
+            Map<String, Object> params;
+            if (firstFacet.reduceParams() != null) {
+                params = new HashMap<String, Object>(firstFacet.reduceParams());
+            } else {
+                params = new HashMap<String, Object>();
+            }
+            params.put("facets", facetObjects);
+            params.put("_client", client);
+            ExecutableScript script = scriptService.executable(firstFacet.scriptLang(), firstFacet.reduceScript(), params);
             facet = script.run();
         } else {
             facet = facetObjects;
