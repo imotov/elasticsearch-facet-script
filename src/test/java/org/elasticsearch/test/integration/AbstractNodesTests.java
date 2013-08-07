@@ -20,13 +20,14 @@
 package org.elasticsearch.test.integration;
 
 import org.elasticsearch.client.Client;
-import org.elasticsearch.common.collect.Maps;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.network.NetworkUtils;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.node.Node;
+import org.junit.Before;
+import org.junit.BeforeClass;
 
 import java.util.Map;
 
@@ -39,22 +40,15 @@ public abstract class AbstractNodesTests {
 
     protected final ESLogger logger = Loggers.getLogger(getClass());
 
-    private Map<String, Node> nodes = newHashMap();
+    private static Map<String, Node> nodes = newHashMap();
 
-    private Map<String, Client> clients = newHashMap();
+    private static Map<String, Client> clients = newHashMap();
 
-    private Settings defaultSettings = ImmutableSettings
+    private static Settings defaultSettings = ImmutableSettings
             .settingsBuilder()
             .put("cluster.name", "test-cluster-" + NetworkUtils.getLocalAddress().getHostName())
             .build();
 
-    public void putDefaultSettings(Settings.Builder settings) {
-        putDefaultSettings(settings.build());
-    }
-
-    public void putDefaultSettings(Settings settings) {
-        defaultSettings = ImmutableSettings.settingsBuilder().put(defaultSettings).put(settings).build();
-    }
 
     public Node startNode(String id) {
         return buildNode(id).start();
@@ -130,5 +124,50 @@ public abstract class AbstractNodesTests {
             node.close();
         }
         nodes.clear();
+    }
+
+    private static volatile AbstractNodesTests testInstance; // this test class only works once per JVM
+
+    @BeforeClass
+    public static void tearDownOnce() throws Exception {
+        synchronized (AbstractNodesTests.class) {
+            if (testInstance != null) {
+                testInstance.afterClass();
+                testInstance.closeAllNodes();
+                testInstance = null;
+            }
+        }
+    }
+
+    @Before
+    public final void setUp() throws Exception {
+        synchronized (AbstractNodesTests.class) {
+            if (testInstance == null) {
+                testInstance = this;
+                testInstance.beforeClass();
+
+            } else {
+                assert testInstance.getClass() == this.getClass();
+            }
+        }
+    }
+
+    public Client client() {
+        synchronized (AbstractNodesTests.class) {
+            if (clients.isEmpty()) {
+                return null;
+            }
+            return clients.values().iterator().next();
+        }
+    }
+
+    protected void afterClass() throws Exception {
+    }
+
+    protected Settings getClassDefaultSettings() {
+        return ImmutableSettings.EMPTY;
+    }
+
+    protected void beforeClass() throws Exception {
     }
 }

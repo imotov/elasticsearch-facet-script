@@ -79,13 +79,13 @@ public class InternalScriptFacet extends InternalFacet implements ScriptFacet {
     }
 
     @Override
-    public Facet reduce(List<Facet> facets) {
+    public Facet reduce(ReduceContext reduceContext) {
         List<Object> facetObjects = newArrayList();
-        for (Facet facet : facets) {
+        for (Facet facet : reduceContext.facets()) {
             InternalScriptFacet mapReduceFacet = (InternalScriptFacet) facet;
             facetObjects.add(mapReduceFacet.facet());
         }
-        InternalScriptFacet firstFacet = ((InternalScriptFacet) facets.get(0));
+        InternalScriptFacet firstFacet = ((InternalScriptFacet) reduceContext.facets().get(0));
         Object facet;
         if (firstFacet.reduceScript() != null) {
             Map<String, Object> params;
@@ -146,9 +146,9 @@ public class InternalScriptFacet extends InternalFacet implements ScriptFacet {
     }
 
     public Map<String, Object> reduceParams() {
-      return reduceParams;
+        return reduceParams;
     }
-    
+
     static final class Fields {
         static final XContentBuilderString _TYPE = new XContentBuilderString("_type");
         static final XContentBuilderString FACET = new XContentBuilderString("facet");
