@@ -84,7 +84,7 @@ public class SimpleScriptFacetTests extends AbstractNodesTests {
                     .endObject()).execute().actionGet();
         }
 
-        client().admin().indices().prepareFlush().setRefresh(true).execute().actionGet();
+        client().admin().indices().prepareFlush().execute().actionGet();
 
         for (int i = 0; i < 5; i++) {
             client().prepareIndex("test", "type1").setSource(jsonBuilder().startObject()
@@ -171,7 +171,7 @@ public class SimpleScriptFacetTests extends AbstractNodesTests {
                     .endObject()).execute().actionGet();
         }
 
-        client().admin().indices().prepareFlush().setRefresh(true).execute().actionGet();
+        client().admin().indices().prepareFlush().execute().actionGet();
 
         for (int i = 0; i < 5; i++) {
             client().prepareIndex("test1", "type1").setSource(jsonBuilder().startObject()
@@ -271,7 +271,7 @@ public class SimpleScriptFacetTests extends AbstractNodesTests {
                 .field("message", "IJKLMNOP")
                 .endObject()).execute().actionGet();
 
-        client().admin().indices().prepareFlush().setRefresh(true).execute().actionGet();
+        client().admin().indices().prepareFlush().execute().actionGet();
 
         client().admin().indices().prepareRefresh().execute().actionGet();
 
@@ -328,7 +328,7 @@ public class SimpleScriptFacetTests extends AbstractNodesTests {
                 .field("message", "foo bar")
                 .endObject()).execute().actionGet();
 
-        client().admin().indices().prepareFlush().setRefresh(true).execute().actionGet();
+        client().admin().indices().prepareFlush().execute().actionGet();
 
         client().admin().indices().prepareRefresh().execute().actionGet();
 
@@ -378,7 +378,7 @@ public class SimpleScriptFacetTests extends AbstractNodesTests {
                     .field("num", i)
                     .endObject()).execute().actionGet();
         }
-        client().admin().indices().prepareFlush().setRefresh(true).execute().actionGet();
+        client().admin().indices().prepareFlush().execute().actionGet();
 
         client().admin().indices().prepareRefresh().execute().actionGet();
 
