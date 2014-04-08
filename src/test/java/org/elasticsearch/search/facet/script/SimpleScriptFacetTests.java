@@ -142,7 +142,7 @@ public class SimpleScriptFacetTests extends AbstractNodesTests {
     }
 
 
-    @Test
+    //@Test
     public void testUpdateFacet() throws Exception {
         try {
             client().admin().indices().prepareDelete("test1").execute().actionGet();
@@ -309,7 +309,7 @@ public class SimpleScriptFacetTests extends AbstractNodesTests {
                 contains(2, 2, 2, 2, 2, 2, 1, 1, 2, 2, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
     }
 
-    @Test
+    //@Test
     public void testClientAccessFromScript() throws Exception {
         try {
             client().admin().indices().prepareDelete("test1").execute().actionGet();
