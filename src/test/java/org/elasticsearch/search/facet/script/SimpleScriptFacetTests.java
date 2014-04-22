@@ -142,7 +142,7 @@ public class SimpleScriptFacetTests extends AbstractNodesTests {
     }
 
 
-    //@Test
+    @Test
     public void testUpdateFacet() throws Exception {
         try {
             client().admin().indices().prepareDelete("test1").execute().actionGet();
@@ -186,7 +186,7 @@ public class SimpleScriptFacetTests extends AbstractNodesTests {
         }
 
         client().admin().indices().prepareRefresh().execute().actionGet();
-
+        //org.elasticsearch.index.mapper.Uid.
         SearchResponse searchResponse = client().prepareSearch()
                 .setSearchType(SearchType.COUNT)
                 .setIndices("test1", "test2")
@@ -197,8 +197,9 @@ public class SimpleScriptFacetTests extends AbstractNodesTests {
                         .field("init_script", "index = _ctx.request().index();")
                         .field("map_script", "" +
                                 "uid = doc._uid.value;" +
-                                "id = org.elasticsearch.index.mapper.Uid.idFromUid(uid);" +
-                                "type = org.elasticsearch.index.mapper.Uid.typeFromUid(uid);" +
+                                "uidId = org.elasticsearch.index.mapper.Uid.createUid(uid);" + 
+                                "id = uidId.id();" +
+                                "type = uidId.type();" +
                                 "if (!_source.isEmpty()) {" +
                                 "  modified = true;" +
                                 "  map = _source.source();" +
