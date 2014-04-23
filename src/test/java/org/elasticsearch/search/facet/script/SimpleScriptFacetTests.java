@@ -186,7 +186,6 @@ public class SimpleScriptFacetTests extends AbstractNodesTests {
         }
 
         client().admin().indices().prepareRefresh().execute().actionGet();
-        //org.elasticsearch.index.mapper.Uid.
         SearchResponse searchResponse = client().prepareSearch()
                 .setSearchType(SearchType.COUNT)
                 .setIndices("test1", "test2")
@@ -310,7 +309,7 @@ public class SimpleScriptFacetTests extends AbstractNodesTests {
                 contains(2, 2, 2, 2, 2, 2, 1, 1, 2, 2, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
     }
 
-    //@Test
+    @Test
     public void testClientAccessFromScript() throws Exception {
         try {
             client().admin().indices().prepareDelete("test1").execute().actionGet();
@@ -340,7 +339,7 @@ public class SimpleScriptFacetTests extends AbstractNodesTests {
                         .startObject("facets")
                         .startObject("facet1")
                         .startObject("script")
-                        .field("map_script", "_client.prepareUpdate(\"test1\", \"type1\", org.elasticsearch.index.mapper.Uid.idFromUid(doc['_uid'].value)).setDoc(\"{\\\"message\\\": \\\"baz\\\"}\").execute().actionGet()")
+                        .field("map_script", "_client.prepareUpdate(\"test1\", \"type1\",  org.elasticsearch.index.mapper.Uid.createUid(doc['_uid'].value).id()).setDoc(\"{\\\"message\\\": \\\"baz\\\"}\").execute().actionGet()")
                         .endObject()
                         .endObject()
                         .endObject()
