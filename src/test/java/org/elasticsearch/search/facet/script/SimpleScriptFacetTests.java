@@ -84,7 +84,7 @@ public class SimpleScriptFacetTests extends AbstractNodesTests {
                     .endObject()).execute().actionGet();
         }
 
-        client().admin().indices().prepareFlush().setRefresh(true).execute().actionGet();
+        client().admin().indices().prepareFlush().execute().actionGet();
 
         for (int i = 0; i < 5; i++) {
             client().prepareIndex("test", "type1").setSource(jsonBuilder().startObject()
@@ -171,7 +171,7 @@ public class SimpleScriptFacetTests extends AbstractNodesTests {
                     .endObject()).execute().actionGet();
         }
 
-        client().admin().indices().prepareFlush().setRefresh(true).execute().actionGet();
+        client().admin().indices().prepareFlush().execute().actionGet();
 
         for (int i = 0; i < 5; i++) {
             client().prepareIndex("test1", "type1").setSource(jsonBuilder().startObject()
@@ -186,7 +186,6 @@ public class SimpleScriptFacetTests extends AbstractNodesTests {
         }
 
         client().admin().indices().prepareRefresh().execute().actionGet();
-
         SearchResponse searchResponse = client().prepareSearch()
                 .setSearchType(SearchType.COUNT)
                 .setIndices("test1", "test2")
@@ -197,8 +196,9 @@ public class SimpleScriptFacetTests extends AbstractNodesTests {
                         .field("init_script", "index = _ctx.request().index();")
                         .field("map_script", "" +
                                 "uid = doc._uid.value;" +
-                                "id = org.elasticsearch.index.mapper.Uid.idFromUid(uid);" +
-                                "type = org.elasticsearch.index.mapper.Uid.typeFromUid(uid);" +
+                                "uidId = org.elasticsearch.index.mapper.Uid.createUid(uid);" + 
+                                "id = uidId.id();" +
+                                "type = uidId.type();" +
                                 "if (!_source.isEmpty()) {" +
                                 "  modified = true;" +
                                 "  map = _source.source();" +
@@ -271,7 +271,7 @@ public class SimpleScriptFacetTests extends AbstractNodesTests {
                 .field("message", "IJKLMNOP")
                 .endObject()).execute().actionGet();
 
-        client().admin().indices().prepareFlush().setRefresh(true).execute().actionGet();
+        client().admin().indices().prepareFlush().execute().actionGet();
 
         client().admin().indices().prepareRefresh().execute().actionGet();
 
@@ -328,7 +328,7 @@ public class SimpleScriptFacetTests extends AbstractNodesTests {
                 .field("message", "foo bar")
                 .endObject()).execute().actionGet();
 
-        client().admin().indices().prepareFlush().setRefresh(true).execute().actionGet();
+        client().admin().indices().prepareFlush().execute().actionGet();
 
         client().admin().indices().prepareRefresh().execute().actionGet();
 
@@ -339,7 +339,7 @@ public class SimpleScriptFacetTests extends AbstractNodesTests {
                         .startObject("facets")
                         .startObject("facet1")
                         .startObject("script")
-                        .field("map_script", "_client.prepareUpdate(\"test1\", \"type1\", org.elasticsearch.index.mapper.Uid.idFromUid(doc['_uid'].value)).setDoc(\"{\\\"message\\\": \\\"baz\\\"}\").execute().actionGet()")
+                        .field("map_script", "_client.prepareUpdate(\"test1\", \"type1\",  org.elasticsearch.index.mapper.Uid.createUid(doc['_uid'].value).id()).setDoc(\"{\\\"message\\\": \\\"baz\\\"}\").execute().actionGet()")
                         .endObject()
                         .endObject()
                         .endObject()
@@ -378,7 +378,7 @@ public class SimpleScriptFacetTests extends AbstractNodesTests {
                     .field("num", i)
                     .endObject()).execute().actionGet();
         }
-        client().admin().indices().prepareFlush().setRefresh(true).execute().actionGet();
+        client().admin().indices().prepareFlush().execute().actionGet();
 
         client().admin().indices().prepareRefresh().execute().actionGet();
 
