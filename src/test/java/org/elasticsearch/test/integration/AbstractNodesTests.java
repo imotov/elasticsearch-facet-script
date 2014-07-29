@@ -47,6 +47,7 @@ public abstract class AbstractNodesTests {
     private static Settings defaultSettings = ImmutableSettings
             .settingsBuilder()
             .put("cluster.name", "test-cluster-" + NetworkUtils.getLocalAddress().getHostName())
+            .put("script.disable_dynamic", false)
             .build();
 
 
