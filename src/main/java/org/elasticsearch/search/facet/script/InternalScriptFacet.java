@@ -1,6 +1,23 @@
+/*
+ * Copyright 2012 Igor Motov
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.elasticsearch.search.facet.script;
 
 import org.elasticsearch.client.Client;
+import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.bytes.HashedBytesArray;
 import org.elasticsearch.common.io.stream.StreamInput;
@@ -15,6 +32,7 @@ import org.elasticsearch.search.facet.InternalFacet;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.elasticsearch.common.collect.Lists.newArrayList;
 
@@ -22,11 +40,12 @@ import static org.elasticsearch.common.collect.Lists.newArrayList;
  *
  */
 public class InternalScriptFacet extends InternalFacet implements ScriptFacet {
-    private static final BytesReference STREAM_TYPE = new HashedBytesArray("script");
+    private static final BytesReference STREAM_TYPE = new HashedBytesArray(Strings.toUTF8Bytes("script"));
 
     private Object facet;
     private String scriptLang;
     private String reduceScript;
+    private Map<String, Object> reduceParams;
     private ScriptService scriptService;
     private Client client;
 
@@ -46,10 +65,11 @@ public class InternalScriptFacet extends InternalFacet implements ScriptFacet {
         this.client = client;
     }
 
-    public InternalScriptFacet(String name, Object facet, String scriptLang, String reduceScript, ScriptService scriptService, Client client) {
+    public InternalScriptFacet(String name, Object facet, String scriptLang, String reduceScript, Map<String, Object> reduceParams, ScriptService scriptService, Client client) {
         this(name, scriptService, client);
         this.facet = facet;
         this.reduceScript = reduceScript;
+        this.reduceParams = reduceParams;
         this.scriptLang = scriptLang;
     }
 
@@ -59,23 +79,29 @@ public class InternalScriptFacet extends InternalFacet implements ScriptFacet {
     }
 
     @Override
-    public Facet reduce(List<Facet> facets) {
+    public Facet reduce(ReduceContext reduceContext) {
         List<Object> facetObjects = newArrayList();
-        for (Facet facet : facets) {
+        for (Facet facet : reduceContext.facets()) {
             InternalScriptFacet mapReduceFacet = (InternalScriptFacet) facet;
             facetObjects.add(mapReduceFacet.facet());
         }
-        InternalScriptFacet firstFacet = ((InternalScriptFacet) facets.get(0));
+        InternalScriptFacet firstFacet = ((InternalScriptFacet) reduceContext.facets().get(0));
         Object facet;
         if (firstFacet.reduceScript() != null) {
-            ExecutableScript script = scriptService.executable(firstFacet.scriptLang(), firstFacet.reduceScript(), new HashMap());
-            script.setNextVar("facets", facetObjects);
-            script.setNextVar("_client", client);
+            Map<String, Object> params;
+            if (firstFacet.reduceParams() != null) {
+                params = new HashMap<String, Object>(firstFacet.reduceParams());
+            } else {
+                params = new HashMap<String, Object>();
+            }
+            params.put("facets", facetObjects);
+            params.put("_client", client);
+            ExecutableScript script = scriptService.executable(firstFacet.scriptLang(), firstFacet.reduceScript(), ScriptService.ScriptType.INLINE, params);
             facet = script.run();
         } else {
             facet = facetObjects;
         }
-        return new InternalScriptFacet(firstFacet.getName(), facet, firstFacet.scriptLang(), firstFacet.reduceScript(), scriptService, client);
+        return new InternalScriptFacet(firstFacet.getName(), facet, firstFacet.scriptLang(), firstFacet.reduceScript(), firstFacet.reduceParams(), scriptService, client);
     }
 
     @Override
@@ -88,6 +114,7 @@ public class InternalScriptFacet extends InternalFacet implements ScriptFacet {
         super.readFrom(in);
         scriptLang = in.readOptionalString();
         reduceScript = in.readOptionalString();
+        reduceParams = in.readMap();
         facet = in.readGenericValue();
     }
 
@@ -96,6 +123,7 @@ public class InternalScriptFacet extends InternalFacet implements ScriptFacet {
         super.writeTo(out);
         out.writeOptionalString(scriptLang);
         out.writeOptionalString(reduceScript);
+        out.writeMap(reduceParams);
         out.writeGenericValue(facet);
     }
 
@@ -115,6 +143,10 @@ public class InternalScriptFacet extends InternalFacet implements ScriptFacet {
 
     public String reduceScript() {
         return reduceScript;
+    }
+
+    public Map<String, Object> reduceParams() {
+        return reduceParams;
     }
 
     static final class Fields {

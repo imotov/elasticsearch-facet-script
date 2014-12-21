@@ -1,3 +1,19 @@
+/*
+ * Copyright 2012 Igor Motov
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.elasticsearch.search.facet.script;
 
 import org.apache.lucene.index.AtomicReaderContext;
@@ -28,14 +44,19 @@ public class ScriptFacetCollector extends FacetExecutor {
 
     private final String reduceScript;
 
+    // initial parameters for same shard scripts {init, map, combine}
+    // state can be passed in params between them too
     private final Map<String, Object> params;
+    // initial parameters for {reduce}
+    private final Map<String, Object> reduceParams;
 
     private ScriptService scriptService;
 
     private Client client;
 
     public ScriptFacetCollector(String scriptLang, String initScript, String mapScript, String combineScript,
-                                String reduceScript, Map<String, Object> params, SearchContext context, Client client) {
+                                String reduceScript, Map<String, Object> params, Map<String, Object> reduceParams,
+                                SearchContext context, Client client) {
         this.scriptService = context.scriptService();
         this.client = client;
         this.scriptLang = scriptLang;
@@ -44,14 +65,19 @@ public class ScriptFacetCollector extends FacetExecutor {
         } else {
             this.params = params;
         }
+        if (reduceParams == null) {
+            this.reduceParams = newHashMap();
+        } else {
+            this.reduceParams = reduceParams;
+        }
         this.params.put("_ctx", context);
         this.params.put("_client", client);
         if (initScript != null) {
-            scriptService.executable(scriptLang, initScript, this.params).run();
+            scriptService.executable(scriptLang, initScript, ScriptService.ScriptType.INLINE, this.params).run();
         }
-        this.mapScript = scriptService.search(context.lookup(), scriptLang, mapScript, this.params);
+        this.mapScript = scriptService.search(context.lookup(), scriptLang, mapScript, ScriptService.ScriptType.INLINE, this.params);
         if (combineScript != null) {
-            this.combineScript = scriptService.executable(scriptLang, combineScript, this.params);
+            this.combineScript = scriptService.executable(scriptLang, combineScript, ScriptService.ScriptType.INLINE, this.params);
         } else {
             this.combineScript = null;
         }
@@ -66,7 +92,7 @@ public class ScriptFacetCollector extends FacetExecutor {
         } else {
             facet = params.get("facet");
         }
-        return new InternalScriptFacet(facetName, facet, scriptLang, reduceScript, scriptService, client);
+        return new InternalScriptFacet(facetName, facet, scriptLang, reduceScript, reduceParams, scriptService, client);
     }
 
     @Override

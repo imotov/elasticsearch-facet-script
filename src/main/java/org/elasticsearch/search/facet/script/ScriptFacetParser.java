@@ -1,3 +1,19 @@
+/*
+ * Copyright 2012 Igor Motov
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.elasticsearch.search.facet.script;
 
 import org.elasticsearch.client.Client;
@@ -53,6 +69,7 @@ public class ScriptFacetParser extends AbstractComponent implements FacetParser 
         String reduceScript = null;
         String scriptLang = null;
         Map<String, Object> params = null;
+        Map<String, Object> reduceParams = null;
         XContentParser.Token token;
         String fieldName = null;
 
@@ -62,6 +79,8 @@ public class ScriptFacetParser extends AbstractComponent implements FacetParser 
             } else if (token == XContentParser.Token.START_OBJECT) {
                 if ("params".equals(fieldName)) {
                     params = parser.map();
+                } else if ("reduce_params".equals(fieldName)) {
+                  reduceParams = parser.map();
                 }
             } else if (token.isValue()) {
                 if ("init_script".equals(fieldName) || "initScript".equals(fieldName)) {
@@ -82,7 +101,7 @@ public class ScriptFacetParser extends AbstractComponent implements FacetParser 
             throw new FacetPhaseExecutionException(facetName, "map_script field is required");
         }
 
-        return new ScriptFacetCollector(scriptLang, initScript, mapScript, combineScript, reduceScript, params, context, client);
+        return new ScriptFacetCollector(scriptLang, initScript, mapScript, combineScript, reduceScript, params, reduceParams, context, client);
     }
 
 }
